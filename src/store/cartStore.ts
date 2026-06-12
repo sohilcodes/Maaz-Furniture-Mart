@@ -1,58 +1,68 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { CartItem, Product } from "@/types";
+"use client";
 
-interface CartStore {
-  items: CartItem[];
-  addItem: (product: Product) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, quantity: number) => void;
-  clearCart: () => void;
-  totalItems: () => number;
-  totalPrice: () => number;
-}
+import { useCartStore } from "@/store/cartStore";
 
-export const useCartStore = create<CartStore>()(
-  persist(
-    (set, get) => ({
-      items: [],
+export default function CartPage() {
+  const { items, removeItem, updateQuantity, clearCart, totalPrice } =
+    useCartStore();
 
-      addItem: (product) => {
-        const existing = get().items.find((i) => i.id === product.id);
-        if (existing) {
-          set({
-            items: get().items.map((i) =>
-              i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i
-            ),
-          });
-        } else {
-          set({ items: [...get().items, { ...product, quantity: 1 }] });
+  const total = totalPrice();
+
+  return (
+    <main className="min-h-screen px-8 py-16">
+      <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
+
+      {items.length === 0 ? (
+        <p className="text-gray-500">Your cart is empty.</p>
+      ) : (
+        <>
+          <div className="flex flex-col gap-4">
+            {items.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between border rounded-lg p-4 shadow-sm"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold">{item.name}</h2>
+                  <p className="text-gray-500">₹{item.price}</p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    className="px-3 py-1 border rounded"
+                  >
+                    −
+                  </button>
+                  <span>{item.quantity}</span>
+                  <button
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    className="px-3 py-1 border rounded"
+                  >
+                    +
+                  </button>
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    className="ml-4 text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 flex justify-between items-center border-t pt-6">
+            <p className="text-xl font-bold">Total: ₹{total}</p>
+            <button
+              onClick={clearCart}
+              className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600"
+            >
+              Clear Cart
+            </button>
+          </div>
+        </>
+      )}
+    </main>
+  );
         }
-      },
-
-      removeItem: (id) =>
-        set({ items: get().items.filter((i) => i.id !== id) }),
-
-      updateQuantity: (id, quantity) => {
-        if (quantity <= 0) {
-          get().removeItem(id);
-          return;
-        }
-        set({
-          items: get().items.map((i) =>
-            i.id === id ? { ...i, quantity } : i
-          ),
-        });
-      },
-
-      clearCart: () => set({ items: [] }),
-
-      totalItems: () =>
-        get().items.reduce((sum, i) => sum + i.quantity, 0),
-
-      totalPrice: () =>
-        get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
-    }),
-    { name: "furniture-cart" }
-  )
-);
