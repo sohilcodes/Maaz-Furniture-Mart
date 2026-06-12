@@ -10,6 +10,7 @@ interface CartStore {
   clearCart: () => void;
   totalItems: () => number;
   totalPrice: () => number;
+  getTotalPrice: () => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -51,6 +52,9 @@ export const useCartStore = create<CartStore>()(
         get().items.reduce((sum, i) => sum + i.quantity, 0),
 
       totalPrice: () =>
+        get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+
+      getTotalPrice: () =>
         get().items.reduce((sum, i) => sum + i.price * i.quantity, 0),
     }),
     { name: "furniture-cart" }
